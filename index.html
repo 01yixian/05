@@ -23,8 +23,7 @@
 <body>
     <div style="margin-bottom: 10px;">
         <button onclick="toggleSimulation()" id="toggleBtn">开始</button>
-        <button onclick="resetGrid(true)">重置网格</button>
-        <button onclick="toggleEditMode()" id="editBtn">编辑模式: 关闭</button>
+        <button onclick="resetGrid()" id="resetBtn">清除重置</button>
     </div>
     <canvas id="gameCanvas"></canvas>
 
@@ -47,21 +46,24 @@
         let isEditing = false;  // 新增编辑模式标志
         let animationFrame;
 
-        // 新增重置函数
-        function resetGrid(randomize = true) {
+        // 修改重置函数
+        function resetGrid() {
             if (isRunning) toggleSimulation();
-            grid = Array(ROWS).fill().map(() => 
-                Array(COLS).fill().map(() => randomize ? (Math.random() > 0.85 ? 1 : 0) : 0)
-            );
+            grid = Array(ROWS).fill().map(() => Array(COLS).fill(0));
             draw();
         }
 
-        // 新增编辑模式切换
-        function toggleEditMode() {
-            isEditing = !isEditing;
-            document.getElementById('editBtn').textContent = `编辑模式: ${isEditing ? '开启' : '关闭'}`;
-            if (isEditing) resetGrid(false);  // 进入编辑模式时清空网格
-        }
+        // 修改点击事件处理（移除运行状态检查）
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const col = Math.floor(x / CELL_SIZE);
+            const row = Math.floor(y / CELL_SIZE);
+            
+            grid[row][col] = grid[row][col] ? 0 : 1;
+            draw();
+        });
 
         // 绘制函数
         function draw() {
@@ -126,36 +128,9 @@
             }
         }
 
-        // 修改初始化部分
-        resetGrid(true);
+        // 初始化时直接创建空网格
+        resetGrid();
         document.getElementById('toggleBtn').style.backgroundColor = '#4CAF50';
-        // 添加点击交互
-        canvas.addEventListener('click', (e) => {
-            if (isRunning) return;  // 仅在暂停时允许编辑
-            
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const col = Math.floor(x / CELL_SIZE);
-            const row = Math.floor(y / CELL_SIZE);
-            
-            grid[row][col] = grid[row][col] ? 0 : 1;
-            draw();
-        });
-
-        // 简化编辑模式切换函数
-        function toggleEditMode() {
-            isEditing = !isEditing;
-            document.getElementById('editBtn').textContent = `初始编辑模式: ${isEditing ? '开启' : '关闭'}`;
-            if (isEditing) {
-                resetGrid(false);  // 进入编辑模式时清空网格
-            }
-        }
-
-        // 初始绘制
-        draw();
-        // 初始调用改为
-        resetGrid(true);
     </script>
 </body>
 </html>
