@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>康威生命游戏</title>
+    <style>
+        canvas {
+            border: 1px solid #333;
+            background: #000;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #1a1a1a;
+            color: white;
+        }
+        button {
+            margin: 10px;
+            padding: 8px 16px;
+        }
+    </style>
+</head>
+<body>
+    <div style="margin-bottom: 10px;">
+        <button onclick="toggleSimulation()" id="toggleBtn">开始</button>
+        <button onclick="resetGrid()" id="resetBtn">清除重置</button>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const CELL_SIZE = 10;
+        const ROWS = Math.floor(window.innerHeight * 0.8 / CELL_SIZE);
+        const COLS = Math.floor(window.innerWidth * 0.8 / CELL_SIZE);
+        
+        let canvas = document.getElementById('gameCanvas');
+        let ctx = canvas.getContext('2d');
+        canvas.width = COLS * CELL_SIZE;
+        canvas.height = ROWS * CELL_SIZE;
+
+        // 初始化随机网格
+        let grid = Array(ROWS).fill().map(() => 
+            Array(COLS).fill().map(() => Math.random() > 0.85 ? 1 : 0)
+        );
+
+        let isRunning = false;
+        let isEditing = false;  // 新增编辑模式标志
+        let animationFrame;
+
+        // 修改重置函数
+        function resetGrid() {
+            if (isRunning) toggleSimulation();
+            grid = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+            draw();
+        }
+
+        // 修改点击事件处理（移除运行状态检查）
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const col = Math.floor(x / CELL_SIZE);
+            const row = Math.floor(y / CELL_SIZE);
+            
+            grid[row][col] = grid[row][col] ? 0 : 1;
+            draw();
+        });
+
+        // 绘制函数
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < ROWS; i++) {
+                for (let j = 0; j < COLS; j++) {
+                    ctx.fillStyle = grid[i][j] ? '#4CAF50' : '#333';
+                    ctx.fillRect(j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE-1, CELL_SIZE-1);
+                }
+            }
+        }
+
+        // 更新网格状态
+        function update() {
+            const newGrid = grid.map(arr => [...arr]);
+            for (let i = 0; i < ROWS; i++) {
+                for (let j = 0; j < COLS; j++) {
+                    let neighbors = 0;
+                    for (let x = -1; x <= 1; x++) {
+                        for (let y = -1; y <= 1; y++) {
+                            if (x === 0 && y === 0) continue;
+                            const ni = (i + x + ROWS) % ROWS;
+                            const nj = (j + y + COLS) % COLS;
+                            neighbors += grid[ni][nj];
+                        }
+                    }
+
+                    // 应用生命游戏规则
+                    if (grid[i][j]) {
+                        newGrid[i][j] = (neighbors === 2 || neighbors === 3) ? 1 : 0;
+                    } else {
+                        newGrid[i][j] = neighbors === 3 ? 1 : 0;
+                    }
+                }
+            }
+            grid = newGrid;
+        }
+
+        // 运行动画
+        function gameLoop() {
+            if (isEditing) return;  // 编辑模式下不运行
+            update();
+            draw();
+            if (isRunning) {
+                animationFrame = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // 切换运行状态
+        // 修改状态切换函数
+        function toggleSimulation() {
+            isRunning = !isRunning;
+            const btn = document.getElementById('toggleBtn');
+            if (isRunning) {
+                btn.textContent = '暂停';
+                btn.style.backgroundColor = '#ff4444';
+                gameLoop();
+            } else {
+                btn.textContent = '开始';
+                btn.style.backgroundColor = '#4CAF50';
+                cancelAnimationFrame(animationFrame);
+            }
+        }
+
+        // 初始化时直接创建空网格
+        resetGrid();
+        document.getElementById('toggleBtn').style.backgroundColor = '#4CAF50';
+    </script>
+</body>
+</html>
